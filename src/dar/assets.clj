@@ -31,11 +31,11 @@
 (defn packages [names]
   (second (reduce visit-pkg [#{} []] names)))
 
-(declare copy) ;; default builders
+(declare copy css) ;; default builders
 
 (defn build
   ([names opts]
-   (build names opts [(copy :files)]))
+   (build names opts [(copy :files) css]))
   ([names opts builders]
   (let [env (assoc opts :packages (packages names))]
     (reduce #(%2 %1) env builders))))
@@ -91,4 +91,17 @@
             out (target env p)]
         (when (outdate? out url)
           (cp url out))))
+    env))
+
+(defn css [env]
+  (let [files (for [pkg (:packages env)
+                    file (:styles pkg)]
+                (let [url (get-url pkg file)
+                      p (resource-path pkg file)
+                      out (target env p)]
+                  (when (outdate? out url)
+                    (cp url out)) ;; TODO: url rewriting
+                  p))
+        css (apply str (map #(str "@import \"" % "\";\n") files))]
+    (write css (target env "build.css"))
     env))

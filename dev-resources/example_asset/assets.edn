@@ -1,0 +1,4 @@
+{:styles ["index.css"
+          "util.css"]
+ :scripts ["foo.js"]
+ :cljs ['example-asset.bar]}

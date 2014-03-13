@@ -11,5 +11,4 @@
                     (cp url out)) ;; TODO: url rewriting
                   p))
         css (apply str (map #(str "@import \"" % "\";\n") files))]
-    (write css (target env "build.css"))
-    env))
+    (assoc env :css css)))

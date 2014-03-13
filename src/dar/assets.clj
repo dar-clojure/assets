@@ -3,7 +3,8 @@
   (:require [clojure.java.io :as io]
             [clojure.edn :as edn]
             [dar.assets.css :as css]
-            [dar.assets.copy :as copy])
+            [dar.assets.copy :as copy]
+            [dar.assets.scripts :as scripts])
   (:import (java.lang Exception)))
 
 (defn read [name]
@@ -29,7 +30,9 @@
 
 (defn build
   ([names opts]
-   (build names opts [css/build (copy/builder :files)]))
+   (build names opts [scripts/build
+                      css/build
+                      (copy/builder :files)]))
   ([names opts builders]
   (let [env (assoc opts :packages (packages names))]
     (reduce #(%2 %1) env builders))))

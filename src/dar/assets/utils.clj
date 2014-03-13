@@ -10,7 +10,7 @@
   (str (:name pkg) "/" file))
 
 (defn target [env path]
-  (io/file (:out-dir env) path))
+  (io/file (:build-dir env) path))
 
 (defn mkdirs-for [^File f]
   (.mkdirs (.getParentFile (.getCanonicalFile f))))

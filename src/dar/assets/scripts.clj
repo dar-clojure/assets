@@ -69,7 +69,7 @@
              {:source-map true
               :optimizations :none
               :warnings false
-              :output-dir (:out-dir env)}
+              :output-dir (:build-dir env)}
              *compiler-env*)]
     (assoc env :js (if-let [main (:main-ns env)]
                      (str out "\ngoog.require('" (namespace-munge main) "');\n")

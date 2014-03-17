@@ -1,4 +1,4 @@
-(ns dar.assets.scripts
+(ns dar.assets.builders.scripts
   (:require [cljs.closure :as cljs]
             [cljs.env :as cljs-env]
             [clojure.string :as string]

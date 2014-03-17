@@ -1,4 +1,4 @@
-(ns dar.assets.copy
+(ns dar.assets.builders.copy
   (:require [dar.assets.utils :refer :all]))
 
 (defn builder [type]

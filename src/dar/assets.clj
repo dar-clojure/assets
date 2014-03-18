@@ -26,8 +26,9 @@
 (defn- visit-pkg [[visited list :as env] name]
   (if (visited name)
     env
-    (let [pkg (read name)]
-      [(conj visited name) (conj list pkg)])))
+    (let [pkg (read name)
+          [v l] (reduce visit-pkg [(conj visited name) list] (:dependencies pkg))]
+      [v (conj l pkg)])))
 
 (defn packages [names]
   (second (reduce visit-pkg [#{} []] names)))

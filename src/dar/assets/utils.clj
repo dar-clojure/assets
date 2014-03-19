@@ -34,5 +34,5 @@
 
 (defn outdate? [out & sources]
   (let [mtime (last-modified out)]
-    (boolean (some #(> (last-modified %) mtime)
+    (boolean (some #(>= (last-modified %) mtime)
                    sources))))

@@ -10,5 +10,5 @@
                   (when (outdate? out url)
                     (cp url out)) ;; TODO: url rewriting
                   p))
-        css (apply str (map #(str "@import \"" % "\";\n") files))]
+        css (apply str (map #(str "@import \"/" % "\";\n") files))]
     (assoc env :css css)))

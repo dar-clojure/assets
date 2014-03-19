@@ -3,11 +3,13 @@
   (:import (java.lang String)
            (java.io File)))
 
-(defn get-url [pkg ^String file]
-  (io/as-url (str (:dir pkg) "/" file)))
-
 (defn resource-path [pkg ^String file]
-  (str (:name pkg) "/" file))
+  (if (= (first file) \/)
+    (subs file 1)
+    (str (:name pkg) "/" file)))
+
+(defn get-url [pkg ^String file]
+  (io/resource (resource-path pkg file)))
 
 (defn target [env path]
   (io/file (:build-dir env) path))

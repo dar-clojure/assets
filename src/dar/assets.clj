@@ -18,15 +18,19 @@
                         ex))))
     (throw (Exception. (str name "/assets.edn not found on classpath")))))
 
-(defn- visit-pkg [[visited list :as env] name]
-  (if (visited name)
-    env
-    (let [pkg (read name)
-          [v l] (reduce visit-pkg [(conj visited name) list] (:dependencies pkg))]
-      [v (conj l pkg)])))
-
 (defn packages [names]
-  (second (reduce visit-pkg [#{} []] names)))
+  (loop [visited #{}
+         ret nil
+         todo names]
+    (if-let [name (first todo)]
+      (if (visited name)
+        (recur visited ret (next todo))
+        (let [pkg (read name)]
+          (recur
+            (conj visited name)
+            (conj ret pkg)
+            (concat (:dependencies pkg) (next todo)))))
+      ret)))
 
 (defn resource-path [pkg ^String path]
   (if (= (first path) \/)
@@ -39,6 +43,13 @@
 (defn ^java.io.File target-file [env path]
   (io/file (:build-dir env) path))
 
-(defn build [builders opts names]
-  (let [env (assoc opts :packages (packages names))]
+(defn build [main builders opts]
+  (let [pkg (read main)
+        env (assoc opts
+              :main pkg
+              :packages (packages
+                          (concat
+                            (:pre-include opts)
+                            [main]
+                            (:post-include opts))))]
     (reduce #(%2 %1) env builders)))

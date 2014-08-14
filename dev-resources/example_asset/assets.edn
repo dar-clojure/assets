@@ -1,3 +1,2 @@
 {:css ["index.css" "util.css"]
- :js ["foo.js"]
- :cljs [example-asset.bar]}
+ :main-ns example-asset.bar}

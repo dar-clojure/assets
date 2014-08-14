@@ -34,7 +34,7 @@
 
 (defn compile [namespaces opts]
   (loop [visited #{}
-         scripts nil
+         scripts ()
          todo namespaces]
     (if-let [ns (first todo)]
       (if (visited ns)
@@ -43,15 +43,15 @@
           (recur
             (conj visited ns)
             (conj scripts js)
-            (concat (:requires js) todo))
+            (concat (:requires js) (next todo)))
           (recur
             (conj visited ns)
             scripts
-            todo)))
+            (next todo))))
       scripts)))
 
 (defn build [env]
-  (if-let [main (:main-ns env)]
+  (if-let [main (-> env :main :main-ns str)]
     (let [out (closure/build
                 (reify closure/Compilable
                   (-compile
@@ -62,5 +62,7 @@
                  :warnings false
                  :output-dir (:build-dir env)}
                 *compiler-env*)]
-      (assoc env :js (str out "\ngoog.require('" (namespace-munge main) "');\n")))
+      (assoc env :js (str out
+                       "\ngoog.require('" (namespace-munge main) "');\n"
+                       (namespace-munge main) "._main();\n")))
     env))

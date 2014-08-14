@@ -1,18 +1,8 @@
 (ns dar.assets.utils
   (:require [clojure.java.io :as io])
-  (:import (java.lang String)
-           (java.io File)))
+  (:import (java.io File)))
 
-(defn resource-path [pkg ^String file]
-  (if (= (first file) \/)
-    (subs file 1)
-    (str (:name pkg) "/" file)))
-
-(defn get-url [pkg ^String file]
-  (io/resource (resource-path pkg file)))
-
-(defn target [env path]
-  (io/file (:build-dir env) path))
+(set! *warn-on-reflection* true)
 
 (defn mkdirs-for [^File f]
   (.mkdirs (.getParentFile (.getCanonicalFile f))))

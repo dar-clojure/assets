@@ -1,13 +1,15 @@
 (ns dar.assets.builders.copy
-  (:require [dar.assets.utils :refer :all]))
+  (:require [dar.assets :as assets]
+            [dar.assets.utils :as util]
+            [clojure.java.io :as io]))
 
-(defn builder [type]
+(defn copy [type]
   (fn [env]
     (doseq [pkg (:packages env)
             file (get pkg type)]
-      (let [url (get-url pkg file)
-            p (resource-path pkg file)
-            out (target env p)]
-        (when (outdate? out url)
-          (cp url out))))
+      (let [path (assets/resource-path pkg file)
+            src (io/resource path)
+            target (assets/target-file env path)]
+        (when (util/outdate? target src)
+          (util/cp src target))))
     env))

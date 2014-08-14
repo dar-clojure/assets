@@ -1,12 +1,7 @@
 (ns dar.assets
   (:refer-clojure :exclude [read])
   (:require [clojure.java.io :as io]
-            [clojure.edn :as edn]
-            (dar.assets.builders
-             [css :as css]
-             [copy :as copy]
-             [scripts :as scripts]))
-  (:import (java.lang Exception)))
+            [clojure.edn :as edn]))
 
 (defn assets-edn-url [name]
   (io/resource (str name "/assets.edn")))
@@ -33,13 +28,17 @@
 (defn packages [names]
   (second (reduce visit-pkg [#{} []] names)))
 
-(def std-builders [scripts/build
-                   css/build
-                   (copy/builder :files)])
+(defn resource-path [pkg ^String path]
+  (if (= (first path) \/)
+    (subs path 1)
+    (str (:name pkg) "/" path)))
 
-(defn build
-  ([names opts]
-   (build names opts std-builders))
-  ([names opts builders]
+(defn resource [pkg ^String path]
+  (io/resource (resource-path pkg path)))
+
+(defn ^java.io.File target-file [env path]
+  (io/file (:build-dir env) path))
+
+(defn build [builders opts names]
   (let [env (assoc opts :packages (packages names))]
-    (reduce #(%2 %1) env builders))))
+    (reduce #(%2 %1) env builders)))

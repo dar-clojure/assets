@@ -1,7 +1,8 @@
 (ns dar.assets
   (:refer-clojure :exclude [read])
   (:require [clojure.java.io :as io]
-            [clojure.edn :as edn]))
+            [clojure.edn :as edn]
+            [dar.assets.util :as util]))
 
 (defn assets-edn-url [name]
   (io/resource (str name "/assets.edn")))
@@ -18,19 +19,13 @@
                         ex))))
     (throw (Exception. (str name "/assets.edn not found on classpath")))))
 
-(defn packages [names]
-  (loop [visited #{}
-         ret nil
-         todo names]
-    (if-let [name (first todo)]
-      (if (visited name)
-        (recur visited ret (next todo))
-        (let [pkg (read name)]
-          (recur
-            (conj visited name)
-            (conj ret pkg)
-            (concat (:dependencies pkg) (next todo)))))
-      ret)))
+(defn packages [roots]
+  (util/topo-visit
+    :dependencies
+    read
+    conj
+    []
+    roots))
 
 (defn resource-path [pkg ^String path]
   (if (= (first path) \/)

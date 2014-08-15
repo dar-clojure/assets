@@ -1,6 +1,6 @@
 (ns dar.assets.builders.css
   (:require [dar.assets :as assets]
-            [dar.assets.utils :as util]
+            [dar.assets.util :as util]
             [clojure.java.io :as io]))
 
 (defn build [env]

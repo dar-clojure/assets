@@ -54,7 +54,7 @@
                  :warnings false
                  :output-dir (:build-dir env)}
                 *compiler-env*)]
-      (assoc env :js (str out
-                       "\ngoog.require('" (namespace-munge main) "');\n"
-                       (namespace-munge main) "._main();\n")))
+      (assoc env
+        :js (str out "\ngoog.require('" (namespace-munge main) "');\n")
+        :js-main-call (str (namespace-munge main) "._main();\n")))
     env))

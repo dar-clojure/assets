@@ -4,10 +4,7 @@
             [dar.assets.builders.cljs :as cljs]
             [dar.assets :as assets]))
 
-(defn dev-build [main opts]
+(defn development [main opts]
   (assets/build main
     [(copy/copy :files) css/build cljs/build]
     opts))
-
-(dev-build "example_asset"
-  {:build-dir "build"})

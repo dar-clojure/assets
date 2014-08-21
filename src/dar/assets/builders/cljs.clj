@@ -49,12 +49,20 @@
                   (-compile
                     [_ opts]
                     (compile [main] opts)))
-                {:source-map true
-                 :optimizations :none
-                 :warnings false
-                 :output-dir (:build-dir env)}
+                (assoc (:cljs env)
+                  :output-dir (:build-dir env))
                 *compiler-env*)]
       (assoc env
-        :js (str out "\ngoog.require('" (namespace-munge main) "');\n")
+        :js-out out
+        :js-require-call (str "goog.require('" (namespace-munge main) "');")
         :js-main-call (str (namespace-munge main) "._main();\n")))
     env))
+
+(defn development [env]
+  (update-in env [:cljs] (partial merge {:source-map true
+                                         :optimizations :none
+                                         :warnings false})))
+
+(defn production [env]
+  (update-in env [:cljs] (partial merge {:optimizations :advanced
+                                         :warnings true})))

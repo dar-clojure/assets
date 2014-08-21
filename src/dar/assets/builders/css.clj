@@ -15,4 +15,4 @@
         css (apply str
               (map #(str "@import \"/" % "\";\n")
                 files))]
-    (assoc env :css css)))
+    (assoc env :css-out css)))

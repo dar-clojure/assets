@@ -41,7 +41,7 @@
 (defn delete-build-dir [env]
   (util/rmdir (:build-dir env)))
 
-(defn build [main builders opts]
+(defn build [main builder opts]
   (let [pkg (read main)
         env (assoc opts
               :main pkg
@@ -50,4 +50,4 @@
                             (:pre-include opts)
                             [main]
                             (:post-include opts))))]
-    (reduce #(%2 %1) env builders)))
+    (builder env)))

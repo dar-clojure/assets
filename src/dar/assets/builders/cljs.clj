@@ -17,12 +17,6 @@
 (defn ns->path [ns]
   (string/replace (namespace-munge ns) \. \/))
 
-(defn path->ns [path]
-  (-> path
-      (string/replace #"\.[^\.]+$" "")
-      (string/replace \/ \.)
-      symbol))
-
 (defn- compile-ns [ns opts]
   (let [path (ns->path ns)
         target (io/file (:output-dir opts) (str path ".js"))]
@@ -57,17 +51,17 @@
                 (assoc (:cljs env)
                   :output-dir (:build-dir env))
                 *compiler-env*)]
-      (assoc env
-        :js-out out
-        :js-require-call (str "goog.require('" (namespace-munge main) "');")
-        :js-main-call (str (namespace-munge main) "._main();\n")))
+      (update-in env [:build :cljs] assoc
+        :js out
+        :require-call (str "goog.require('" (namespace-munge main) "');")
+        :main-call (str (namespace-munge main) "._main();\n")))
     env))
 
-(defn development [env]
+(defn set-development-options [env]
   (update-in env [:cljs] (partial merge {:source-map true
                                          :optimizations :none
                                          :warnings false})))
 
-(defn production [env]
+(defn set-production-options [env]
   (update-in env [:cljs] (partial merge {:optimizations :advanced
                                          :warnings true})))

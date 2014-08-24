@@ -9,6 +9,11 @@
 
 (def ^:dynamic *compiler-env* (cljs-env/default-compiler-env))
 
+(defn clear-env []
+  (alter-var-root #'*compiler-env*
+    (fn [_]
+      (cljs-env/default-compiler-env))))
+
 (defn ns->path [ns]
   (string/replace (namespace-munge ns) \. \/))
 

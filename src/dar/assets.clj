@@ -38,6 +38,9 @@
 (defn ^java.io.File target-file [env path]
   (io/file (:build-dir env) path))
 
+(defn delete-build-dir [env]
+  (util/rmdir (:build-dir env)))
+
 (defn build [main builders opts]
   (let [pkg (read main)
         env (assoc opts

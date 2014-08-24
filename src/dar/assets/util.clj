@@ -1,6 +1,7 @@
 (ns dar.assets.util
   (:require [clojure.java.io :as io])
-  (:import (java.io File)))
+  (:import (java.io File))
+  (:import (java.nio.file Files LinkOption Path)))
 
 (set! *warn-on-reflection* true)
 
@@ -17,6 +18,14 @@
     (if (= "file" (.getProtocol url))
       (io/copy (io/as-file src) out)
       (io/copy (slurp url) out))))
+
+(defn rmdir [dir]
+  (let [file (io/as-file dir)
+        path (.toPath file)]
+    (when (Files/isDirectory path (into-array [LinkOption/NOFOLLOW_LINKS]))
+      (doseq [item (.listFiles file)]
+        (rmdir item)))
+    (Files/deleteIfExists path)))
 
 (defn last-modified [file]
   (let [url (io/as-url file)]

@@ -1,2 +1,0 @@
-{:css ["index.css" "util.css"]
- :main-ns example-asset.bar}

@@ -50,7 +50,7 @@
                              (post ret (get visited k))
                              (pop stack)
                              (next todo))
-        (visited name) (recur
+        (visited k) (recur
                          visited
                          ret
                          stack

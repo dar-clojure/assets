@@ -17,15 +17,24 @@
 (defn ns->path [ns]
   (string/replace (namespace-munge ns) \. \/))
 
+(defn- compile-js [path opts]
+  (when-let [js (io/resource (str path ".js"))]
+    (let [target (io/file (:output-dir opts) (str path ".js"))]
+      (get-in (swap! *compiler-env* update-in [::cache path]
+                (fn [script]
+                  (if (or
+                        (when (util/outdate? target js)
+                          (util/cp js target)
+                          true)
+                        (not script))
+                    (closure/read-js target)
+                    script)))
+        [::cache path]))))
+
 (defn- compile-ns [ns opts]
-  (let [path (ns->path ns)
-        target (io/file (:output-dir opts) (str path ".js"))]
-    (if-let [js (io/resource (str path ".js"))]
-      (do
-        (when (util/outdate? target js)
-          (util/cp js target)
-          (swap! *compiler-env* assoc-in [::cache path] (closure/read-js target)))
-        (get-in @*compiler-env* [::cache path]))
+  (let [path (ns->path ns)]
+    (or
+      (compile-js path opts)
       (when-let [clj (io/resource (str path ".cljs"))]
         (closure/-compile clj
           (assoc opts :output-file (str path ".js")))))))

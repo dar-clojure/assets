@@ -1,53 +1,76 @@
 (ns dar.assets
-  (:refer-clojure :exclude [read])
-  (:require [clojure.java.io :as io]
-            [clojure.edn :as edn]
-            [dar.assets.util :as util]))
+  (:require [dar.container :refer :all]
+            [dar.assets.util :as util]
+            [dar.assets.cljs :as cljs]
+            [clojure.java.io :as io]))
 
-(defn assets-edn-url [name]
-  (io/resource (str name "/assets.edn")))
+(application development)
 
-(defn read [name]
-  (if-let [url (assets-edn-url name)]
-    (try
-      (merge (edn/read-string (slurp url))
-             {:dir (io/resource name)
-              :name name})
-      (catch Throwable ex
-        (throw (ex-info (str "Failed to read assets.edn from " name)
-                        {::url url}
-                        ex))))
-    (throw (Exception. (str name "/assets.edn not found on classpath")))))
+(define :assets/main
+  :doc "Name of the main package")
 
-(defn packages [roots]
-  (util/topo-visit
-    :dependencies
-    read
-    conj
-    []
-    roots))
+(define :assets/packages
+  :doc "List of packages to build (in dependency order)"
+  :args [:assets/main]
+  :fn (fn [main]
+        (util/topo-visit
+          :dependencies
+          util/read
+          conj
+          []
+          [main])))
 
-(defn resource-path [pkg ^String path]
-  (if (= (first path) \/)
-    (subs path 1)
-    (str (:name pkg) "/" path)))
+(define :assets/main-pkg
+  :args [:assets/main]
+  :fn (fn [main]
+        (util/read main)))
 
-(defn resource [pkg ^String path]
-  (io/resource (resource-path pkg path)))
+(define :assets/build-dir
+  :doc "A place to store build products")
 
-(defn ^java.io.File target-file [env path]
-  (io/file (:build-dir env) path))
+(define :assets/public-dir
+  :doc "A dir to store public files to be served by HTTP server"
+  :args [:assets/build-dir]
+  :fn identity)
 
-(defn delete-build-dir [env]
-  (util/rmdir (:build-dir env)))
+(define :assets/prefix "")
 
-(defn build [main builder opts]
-  (let [pkg (read main)
-        env (assoc opts
-              :main pkg
-              :packages (packages
-                          (concat
-                            (:pre-include opts)
-                            [main]
-                            (:post-include opts))))]
-    (builder env)))
+(defn files [type packages]
+  (for [pkg packages
+        file (get pkg type)
+        :let [path (util/resource-path pkg file)
+              src (io/resource path)]]
+    (when-not src
+      (throw
+        (Exception. (str type " file " file " not found in package " name))))
+    {:path path
+     :src src
+     :pkg pkg}))
+
+(defn- copy-file [{:keys [path src]} dir]
+  (let [target (io/file dir path)]
+    (when (util/outdate? target src)
+      (util/cp src target))))
+
+(define :css/links
+  :doc "TODO: url rewriting"
+  :args [:assets/packages :assets/public-dir]
+  :fn (fn [packages dir]
+        (mapv (fn [file]
+                (copy-file file)
+                [:link {:href (:path file)
+                        :rel "stylesheet"
+                        :type "text/css"}])
+          (files :css packages))))
+
+(define :files
+  :args [:assets/packages :assets/public-dir]
+  :fn (fn [packages dir]
+        (doseq [file (files :files packages)]
+          (copy-file file dir))))
+
+(include cljs/development)
+
+(define :cljs/main
+  :args [:assets/main-pkg]
+  :fn :main-ns)

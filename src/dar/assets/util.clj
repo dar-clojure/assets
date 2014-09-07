@@ -1,23 +1,82 @@
 (ns dar.assets.util
-  (:require [clojure.java.io :as io])
+  (:refer-clojure :exclude [read])
+  (:require [clojure.java.io :as io]
+            [clojure.edn :as edn])
   (:import (java.io File))
   (:import (java.nio.file Files LinkOption Path)))
 
 (set! *warn-on-reflection* true)
 
-(defn mkdirs-for [^File f]
-  (.mkdirs (.getParentFile (.getCanonicalFile f))))
+(defn assets-edn-url [name]
+  (io/resource (str name "/assets.edn")))
 
-(defn write [^String s ^File out]
+(defn read [name]
+  (if-let [url (assets-edn-url name)]
+    (try
+      (merge (edn/read-string (slurp url))
+        {:dir (io/resource name)
+         :name name})
+      (catch Throwable ex
+        (throw (Exception. (str "Failed to read assets.edn from " name) ex))))
+    (throw (Exception. (str name "/assets.edn not found on classpath")))))
+
+(defn resource-path [pkg ^String path]
+  (if (= (first path) \/)
+    (subs path 1)
+    (str (:name pkg) "/" path)))
+
+(defn resource [pkg ^String path]
+  (io/resource (resource-path pkg path)))
+
+(defn topo-visit [dependencies visit post init col]
+  (loop [visited {}
+         ret init
+         stack nil
+         todo col]
+    (if-let [k (first todo)]
+      (cond
+        (= (peek stack) k) (recur
+                             visited
+                             (post ret (get visited k))
+                             (pop stack)
+                             (next todo))
+        (find visited k) (recur
+                           visited
+                           ret
+                           stack
+                           (next todo))
+        :else (let [v (visit k)]
+                (recur
+                  (assoc visited k v)
+                  ret
+                  (conj stack k)
+                  (concat (dependencies v) todo))))
+      ret)))
+
+(defn build-list [roots]
+  (util/topo-visit
+    :dependencies
+    read
+    conj
+    []
+    roots))
+
+(defn mkdirs-for [file]
+  (.. (io/as-file)
+    getCanonicalFile
+    getParentFile
+    mkdirs))
+
+(defn write [s out]
   (mkdirs-for out)
-  (io/copy s out))
+  (io/copy (str s) (io/as-file out)))
 
-(defn cp [src ^File out]
+(defn cp [src out]
   (mkdirs-for out)
   (let [url (io/as-url src)]
     (if (= "file" (.getProtocol url))
-      (io/copy (io/as-file src) out)
-      (io/copy (slurp url) out))))
+      (io/copy (io/as-file src) (io/as-file out))
+      (io/copy (slurp url) (io/as-file out)))))
 
 (defn rmdir [dir]
   (let [file (io/as-file dir)
@@ -36,29 +95,7 @@
 (defn outdate? [out & sources]
   (let [mtime (last-modified out)]
     (boolean (some #(>= (last-modified %) mtime)
-                   sources))))
+               sources))))
 
-(defn topo-visit [dependencies visit post init col]
-  (loop [visited {}
-         ret init
-         stack nil
-         todo col]
-    (if-let [k (first todo)]
-      (cond
-        (= (peek stack) k) (recur
-                             visited
-                             (post ret (get visited k))
-                             (pop stack)
-                             (next todo))
-        (visited k) (recur
-                         visited
-                         ret
-                         stack
-                         (next todo))
-        :else (let [v (visit k)]
-                (recur
-                  (assoc visited k v)
-                  ret
-                  (conj stack k)
-                  (concat (dependencies v) todo))))
-      ret)))
+(defn prefix [p path]
+  (str p "/" path))

@@ -1,7 +1,8 @@
 (ns dar.assets.util
   (:refer-clojure :exclude [read])
   (:require [clojure.java.io :as io]
-            [clojure.edn :as edn])
+            [clojure.edn :as edn]
+            [clojure.string :as string])
   (:import (java.io File))
   (:import (java.nio.file Files LinkOption Path)))
 
@@ -24,9 +25,6 @@
   (if (= (first path) \/)
     (subs path 1)
     (str (:name pkg) "/" path)))
-
-(defn resource [pkg ^String path]
-  (io/resource (resource-path pkg path)))
 
 (defn topo-visit [dependencies visit post init col]
   (loop [visited {}
@@ -53,16 +51,8 @@
                   (concat (dependencies v) todo))))
       ret)))
 
-(defn build-list [roots]
-  (util/topo-visit
-    :dependencies
-    read
-    conj
-    []
-    roots))
-
 (defn mkdirs-for [file]
-  (.. (io/as-file)
+  (.. (io/as-file file)
     getCanonicalFile
     getParentFile
     mkdirs))
@@ -97,5 +87,6 @@
     (boolean (some #(>= (last-modified %) mtime)
                sources))))
 
-(defn prefix [p path]
-  (str p "/" path))
+(defn join [& segs]
+  (-> (string/join "/" segs)
+    (string/replace "//" "/")))

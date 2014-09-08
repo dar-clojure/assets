@@ -71,14 +71,21 @@
 (define :cljs/main-script
   :args [:cljs/main]
   :fn (fn [main]
-        [:script (str (namespace-munge (str main)) "._main()")]))
+        (when main
+          [:script (str (namespace-munge (str main)) "._main()")])))
 
-(define :cljs/scripts
-  :args [::build :cljs/main :assets/prefix]
+(define ::scripts
+  :args [::build :cljs/main :assets/public-url]
   :fn (fn [deps-js main prefix]
-        [[:script {:src (prefix "goog/base.js")}]
+        [[:script {:src (util/join prefix "goog/base.js")}]
          [:script deps-js]
          [:script (str "goog.require('" (namespace-munge (name main)) "')")]]))
+
+(define :cljs/scripts
+  :args [:cljs/main :dar.container/self]
+  :fn (fn [main app]
+        (when main
+          (evaluate app ::scripts))))
 
 (application production-patch)
 
@@ -90,8 +97,8 @@
           opts
           {:output-dir dir})))
 
-(define :cljs/scripts
-  :args [::build :assets/public-dir :assets/prefix]
-  :fn (fn [js dir prefix]
-        (util/write js (io/file dir "app.js"))
-        [:script {:src (prefix "app.js")}]))
+(define ::scripts
+  :args [::build :assets/public-dir :assets/public-url :assets/main]
+  :fn (fn [js dir prefix main]
+        (util/write js (io/file dir main "app.js"))
+        [:script {:src (util/join prefix main "app.js")}]))

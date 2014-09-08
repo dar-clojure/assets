@@ -29,11 +29,14 @@
   :doc "A place to store build products")
 
 (define :assets/public-dir
-  :doc "A dir to store public files to be served by HTTP server"
+  :doc
+  "A dir to store public files to be served by HTTP server.
+  It is generally within a build-dir (for cleanup purposes)"
   :args [:assets/build-dir]
   :fn identity)
 
-(define :assets/prefix "")
+(define :assets/public-url "/"
+  :doc "URL under which public dir will be served")
 
 (defn files [type packages]
   (for [pkg packages
@@ -53,7 +56,7 @@
       (util/cp src target))))
 
 (define :css/links
-  :doc "TODO: url rewriting"
+  :doc "Builds Css and returns a list of link tags to include in HTML page"
   :args [:assets/packages :assets/public-dir]
   :fn (fn [packages dir]
         (mapv (fn [file]
@@ -64,6 +67,7 @@
           (files :css packages))))
 
 (define :files
+  :doc "Copies :files to public-dir"
   :args [:assets/packages :assets/public-dir]
   :fn (fn [packages dir]
         (doseq [file (files :files packages)]
@@ -74,3 +78,31 @@
 (define :cljs/main
   :args [:assets/main-pkg]
   :fn :main-ns)
+
+(define :page
+  :args [:css/links :cljs/scripts :cljs/main-script :page/content :page/title]
+  :fn (fn [css scripts main content title]
+        (hiccup/html
+          (html5
+            [:html
+             [:head
+              [:title title]
+              (seq css)
+              (seq scripts)]
+             [:body content main]]))))
+
+(define :page/title
+  :args [:assets/main]
+  :fn identity)
+
+(define :page/content
+  :args [:assets/main-pkg]
+  :fn (fn [{html :main-html :as pkg}]
+        (cond
+          (nil? html) nil
+          (string? html) (if-let [url (io/resource (util/resource-path pkg html))]
+                           (slurp url)
+                           (throw
+                             (Exception.
+                               (str "Html file " html " not found in package " (:name pkg)))))
+          :else (hiccup/html html))))

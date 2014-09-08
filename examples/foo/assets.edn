@@ -1,0 +1,3 @@
+{:css ["foo.css"]
+ :main-ns foo.main
+ :main-html [:div {:id "main"} "Hello world!"]}

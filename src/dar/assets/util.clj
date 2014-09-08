@@ -51,6 +51,11 @@
                   (concat (dependencies v) todo))))
       ret)))
 
+(defn mkdirs [file]
+  (.. (io/as-file file)
+    getCanonicalFile
+    mkdirs))
+
 (defn mkdirs-for [file]
   (.. (io/as-file file)
     getCanonicalFile
@@ -90,3 +95,6 @@
 (defn join [& segs]
   (-> (string/join "/" segs)
     (string/replace "//" "/")))
+
+(defn fs-join [& segs]
+  (.getPath (apply io/file segs)))

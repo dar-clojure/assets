@@ -2,7 +2,9 @@
   (:require [dar.container :refer :all]
             [dar.assets.util :as util]
             [dar.assets.cljs :as cljs]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [hiccup.core :as hiccup]
+            [hiccup.page :refer [html5]]))
 
 (application development)
 
@@ -30,8 +32,7 @@
 
 (define :assets/public-dir
   :doc
-  "A dir to store public files to be served by HTTP server.
-  It is generally within a build-dir (for cleanup purposes)"
+  "A dir to store public files to be served by HTTP server"
   :args [:assets/build-dir]
   :fn identity)
 
@@ -43,12 +44,13 @@
         file (get pkg type)
         :let [path (util/resource-path pkg file)
               src (io/resource path)]]
-    (when-not src
-      (throw
-        (Exception. (str type " file " file " not found in package " name))))
-    {:path path
-     :src src
-     :pkg pkg}))
+    (do
+      (when-not src
+        (throw
+          (Exception. (str type " file " file " not found in package " name))))
+      {:path path
+       :src src
+       :pkg pkg})))
 
 (defn- copy-file [{:keys [path src]} dir]
   (let [target (io/file dir path)]
@@ -60,7 +62,7 @@
   :args [:assets/packages :assets/public-dir]
   :fn (fn [packages dir]
         (mapv (fn [file]
-                (copy-file file)
+                (copy-file file dir)
                 [:link {:href (:path file)
                         :rel "stylesheet"
                         :type "text/css"}])
@@ -106,3 +108,39 @@
                              (Exception.
                                (str "Html file " html " not found in package " (:name pkg)))))
           :else (hiccup/html html))))
+
+(define :page/file
+  :args [:page :assets/main :assets/public-dir]
+  :fn (fn [html main dir]
+        (util/write html (io/file dir main "index.html"))))
+
+(define :build
+  :pre [:page/file]
+  :fn noop)
+
+(application production)
+
+(include development)
+
+(include cljs/production-patch)
+
+(define :assets/public-dir
+  :args [:assets/build-dir]
+  :fn (fn [dir]
+        (util/fs-join dir "pages")))
+
+(define :cljs/build-dir
+  :args [:assets/build-dir]
+  :fn (fn [dir]
+        (util/fs-join dir "cljs")))
+
+(defn build
+  ([opts]
+   (build production opts))
+  ([app opts]
+   (build app :build opts))
+  ([app what opts]
+   (let [ret (evaluate (start app opts) what)]
+     (when (instance? Throwable ret)
+       (throw ret))
+     ret)))

@@ -48,15 +48,30 @@
 
 (application development)
 
+(define :cljs/options nil)
+
 (define ::env
   :level :env
   :fn #(cljs-env/default-compiler-env))
 
+(define :cljs/build-dir
+  :args [:assets/public-dir]
+  :fn identity)
+
+(define ::dir
+  :args [:cljs/build-dir]
+  :fn (fn [dir]
+        (util/mkdirs dir)
+        dir))
+
+(define ::default-options {:optimizations :none
+                           :source-map true})
+
 (define ::opts
-  :args [:assets/public-dir :cljs/options]
-  :fn (fn [dir opts]
+  :args [::dir :cljs/options ::default-options]
+  :fn (fn [dir opts defaults]
         (merge
-          {:optimizations :none :source-map true}
+          defaults
           opts
           {:output-dir dir})))
 
@@ -89,16 +104,12 @@
 
 (application production-patch)
 
-(define ::opts
-  :args [:cljs/build-dir :cljs/options]
-  :fn (fn [dir opts]
-        (merge
-          {:optimizations :advanced}
-          opts
-          {:output-dir dir})))
+(define :cljs/build-dir)
+
+(define ::default-options {:optimizations :advanced})
 
 (define ::scripts
   :args [::build :assets/public-dir :assets/public-url :assets/main]
   :fn (fn [js dir prefix main]
         (util/write js (io/file dir main "app.js"))
-        [:script {:src (util/join prefix main "app.js")}]))
+        [[:script {:src (util/join prefix main "app.js")}]]))

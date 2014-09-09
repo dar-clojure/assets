@@ -59,7 +59,8 @@
   :fn identity)
 
 (define ::default-options {:optimizations :none
-                           :source-map true})
+                           :source-map true
+                           :warnings false})
 
 (define ::opts
   :args [:cljs/build-dir :cljs/options ::default-options]
@@ -100,7 +101,8 @@
 
 (define :cljs/build-dir)
 
-(define ::default-options {:optimizations :advanced})
+(define ::default-options {:optimizations :advanced
+                           :warnings false})
 
 (define ::scripts
   :args [::build]

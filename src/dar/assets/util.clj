@@ -97,4 +97,4 @@
     (string/replace "//" "/")))
 
 (defn fs-join [& segs]
-  (.getPath (apply io/file segs)))
+  (.getPath ^java.io.File (apply io/file segs)))

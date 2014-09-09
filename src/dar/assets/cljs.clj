@@ -58,17 +58,11 @@
   :args [:assets/public-dir]
   :fn identity)
 
-(define ::dir
-  :args [:cljs/build-dir]
-  :fn (fn [dir]
-        (util/mkdirs dir)
-        dir))
-
 (define ::default-options {:optimizations :none
                            :source-map true})
 
 (define ::opts
-  :args [::dir :cljs/options ::default-options]
+  :args [:cljs/build-dir :cljs/options ::default-options]
   :fn (fn [dir opts defaults]
         (merge
           defaults
@@ -109,7 +103,6 @@
 (define ::default-options {:optimizations :advanced})
 
 (define ::scripts
-  :args [::build :assets/public-dir :assets/public-url :assets/main]
-  :fn (fn [js dir prefix main]
-        (util/write js (io/file dir main "app.js"))
-        [[:script {:src (util/join prefix main "app.js")}]]))
+  :args [::build]
+  :fn (fn [js]
+        [[:script js]]))

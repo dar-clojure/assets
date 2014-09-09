@@ -114,10 +114,6 @@
   :fn (fn [html main dir]
         (util/write html (io/file dir main "index.html"))))
 
-(define :build
-  :pre [:page/file]
-  :fn noop)
-
 (application production)
 
 (include development)
@@ -127,20 +123,27 @@
 (define :assets/public-dir
   :args [:assets/build-dir]
   :fn (fn [dir]
-        (util/fs-join dir "pages")))
+        (util/fs-join dir "out")))
 
 (define :cljs/build-dir
   :args [:assets/build-dir]
   :fn (fn [dir]
         (util/fs-join dir "cljs")))
 
+(define :css/links
+  :args [:assets/packages]
+  :fn (fn [packages]
+        (mapv (fn [file]
+                [:style (slurp (:src file))])
+          (files :css packages))))
+
+(define :index.html
+  :args [:page :assets/public-dir]
+  :fn (fn [html dir]
+        (util/write html (io/file dir "index.html"))))
+
 (defn build
-  ([opts]
-   (build production opts))
-  ([app opts]
-   (build app :build opts))
-  ([app what opts]
-   (let [ret (evaluate (start app opts) what)]
-     (when (instance? Throwable ret)
-       (throw ret))
-     ret)))
+  ([main build-dir]
+   (<?!evaluate (start production {:assets/main main
+                                   :assets/build-dir build-dir})
+     :index.html)))

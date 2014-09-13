@@ -89,12 +89,26 @@
 
 (defn outdate? [out & sources]
   (let [mtime (last-modified out)]
-    (boolean (some #(>= (last-modified %) mtime)
-               sources))))
+    (boolean
+      (some #(>= (last-modified %) mtime)
+        sources))))
 
-(defn join [& segs]
-  (-> (string/join "/" segs)
-    (string/replace "//" "/")))
+(defn join
+  ([seg1 seg2]
+   (cond
+     (nil? seg1) seg2
+     (= \/ (first seg2)) seg2
+     :else (let [seg1 (if (= "/" seg1)
+                        ""
+                        (string/replace seg1 #"/$" ""))]
+             (str seg1 "/" seg2))))
+  ([seg1 seg2 seg3 & rest]
+   (apply join (join seg1 seg2) seg3 rest)))
 
 (defn fs-join [& segs]
   (.getPath ^java.io.File (apply io/file segs)))
+
+(defn absolute? [^String path]
+  (or
+    (.contains path "://")
+    (= \/ (first path))))

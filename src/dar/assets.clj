@@ -3,8 +3,11 @@
             [dar.assets.util :as util]
             [dar.assets.cljs :as cljs]
             [clojure.java.io :as io]
+            [clojure.string :as string]
             [hiccup.core :as hiccup]
             [hiccup.page :refer [html5]]))
+
+(set! *warn-on-reflection* true)
 
 (application development)
 
@@ -52,18 +55,39 @@
        :src src
        :pkg pkg})))
 
-(defn- copy-file [{:keys [path src]} dir]
+(defn copy-file [{:keys [path src]} dir]
   (let [target (io/file dir path)]
     (when (util/outdate? target src)
       (util/cp src target))))
 
+(defn- trim-quotes [[q :as ^String s]]
+  (if (or (= \' q) (= \" q))
+    (.substring s 1 (dec (.length s)))
+    s))
+
+(defn css-url-rewrite [file url-prefix]
+  (let [css (slurp (:src file))]
+    (string/replace css #"\burl *\(([^)]+)\)"
+      (fn [[_ url]]
+        (let [^String url (trim-quotes url)]
+          (str
+            "url('"
+            (cond
+              (.contains url "data:") url
+              (= "//" (.substring url 2)) (util/join url-prefix (.substring url 2))
+              (util/absolute? url) url
+              :else (util/join url-prefix (:path file) ".." url))
+            "')"))))))
+
 (define :css/links
   :doc "Builds Css and returns a list of link tags to include in HTML page"
-  :args [:assets/packages :assets/public-dir]
-  :fn (fn [packages dir]
+  :args [:assets/packages :assets/public-dir :assets/public-url]
+  :fn (fn [packages dir prefix]
         (mapv (fn [file]
-                (copy-file file dir)
-                [:link {:href (:path file)
+                (let [target (io/file dir (:path file))]
+                  (when (util/outdate? target (:src file))
+                    (util/write (css-url-rewrite file prefix) target)))
+                [:link {:href (util/join prefix (:path file))
                         :rel "stylesheet"
                         :type "text/css"}])
           (files :css packages))))
@@ -82,6 +106,7 @@
   :fn :main-ns)
 
 (define :page
+  :pre [:files]
   :args [:css/links :cljs/scripts :cljs/main-script :page/content :page/title]
   :fn (fn [css scripts main content title]
         (hiccup/html
@@ -109,16 +134,13 @@
                                (str "Html file " html " not found in package " (:name pkg)))))
           :else (hiccup/html html))))
 
-(define :page/file
-  :args [:page :assets/main :assets/public-dir]
-  :fn (fn [html main dir]
-        (util/write html (io/file dir main "index.html"))))
-
 (application production)
 
 (include development)
 
 (include cljs/production-patch)
+
+(define :assets/public-url nil)
 
 (define :assets/public-dir
   :args [:assets/build-dir]
@@ -131,10 +153,10 @@
         (util/fs-join dir "cljs")))
 
 (define :css/links
-  :args [:assets/packages]
-  :fn (fn [packages]
+  :args [:assets/packages :assets/public-url]
+  :fn (fn [packages url]
         (mapv (fn [file]
-                [:style (slurp (:src file))])
+                [:style (css-url-rewrite file url)])
           (files :css packages))))
 
 (define :index.html

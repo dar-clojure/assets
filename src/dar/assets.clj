@@ -103,36 +103,46 @@
 
 (define :cljs/main
   :args [:assets/main-pkg]
-  :fn :main-ns)
+  :fn #(-> % :page :main-ns))
 
 (define :page
   :pre [:files]
-  :args [:css/links :cljs/scripts :cljs/main-script :page/content :page/title]
-  :fn (fn [css scripts main content title]
+  :args [:css/links :cljs/scripts :cljs/main-script :page/body :page/title :page/head]
+  :fn (fn [css scripts main body title head]
         (hiccup/html
           (html5
             [:html
              [:head
               [:title title]
+              head
               (seq css)
               (seq scripts)]
-             [:body content main]]))))
+             [:body body main]]))))
 
 (define :page/title
-  :args [:assets/main]
-  :fn identity)
-
-(define :page/content
   :args [:assets/main-pkg]
-  :fn (fn [{html :main-html :as pkg}]
-        (cond
-          (nil? html) nil
-          (string? html) (if-let [url (io/resource (util/resource-path pkg html))]
-                           (slurp url)
-                           (throw
-                             (Exception.
-                               (str "Html file " html " not found in package " (:name pkg)))))
-          :else (hiccup/html html))))
+  :fn (fn [pkg]
+        (or (-> pkg :page :title) (-> pkg :name))))
+
+(defn- to-html [html pkg]
+  (cond
+    (nil? html) nil
+    (string? html) (if-let [url (io/resource (util/resource-path pkg html))]
+                     (slurp url)
+                     (throw
+                       (Exception.
+                         (str "Html file " html " not found in package " (:name pkg)))))
+    :else (hiccup/html html)))
+
+(define :page/body
+  :args [:assets/main-pkg]
+  :fn (fn [pkg]
+        (to-html (-> pkg :page :body) pkg)))
+
+(define :page/head
+  :args [:assets/main-pkg]
+  :fn (fn [pkg]
+        (to-html (-> pkg :page :head) pkg)))
 
 (application production)
 
@@ -168,4 +178,3 @@
   ([main build-dir]
    (<?!evaluate (start production {:assets/main main
                                    :assets/build-dir build-dir})
-     :index.html)))

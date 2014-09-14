@@ -10,7 +10,7 @@ For example:
 {:dependencies ["com/twitter/bootstrap"]
  :css ["foo.css", "bar.css"]
  :files ["background.png"]
- :page {:main foo.bar.main
+ :page {:main-ns foo.bar.main
         :body "body.html"}}
 ```
 
@@ -42,27 +42,27 @@ images, fonts, etc.
 A list of css files.
 
 ```clojure
-{:css ["foo.css", "/com/bar.css"]} ; same path resolution rules as for :files
+{:css ["foo.css", "/com/company/bar.css"]} ; same path resolution rules as for :files
 ```
 
 All urls containing in the file will be resolved relative to its location
-and appropriately rewrited. Urls starting with `//` are treated as absolute class-paths,
-however, corresponding resource will not be copied automatically to the public dir
-and still should be listed as a file of some component.
+and appropriately rewrited, however, corresponding resource will not be copied
+automatically to the public dir and still should be listed as a file of some component.
+Urls starting with `//` are treated as absolute class-paths.
 
 ####:page
 
 A map of options that describe an app entry point, i.e. specify the given component as a main.
 
-#####:main
+#####:main-ns
 
-Main clojure function. When only namespace is given `-main` is assumed.
+Main namespace. Must contain `-main` (`_main`) function, which should be marked as exported.
 
 ```clojure
-{:page {:main foo.bar.baz/main}}
+(defn ^:export -main [])
 ```
 
-All required `.cljs` files will be compiled and appropriately included in page.
+All required `.cljs` files will be compiled and appropriately included.
 
 Google Closure style JavaScript files are supported.
 
@@ -70,22 +70,16 @@ To use foreign JavaScript
 library just compile it to a single file, prepend `goog.provide('ns.for.lib')`
 statement, place it to the corresponding class-path location, then use it as a normal clojure lib.
 
-Call to main function will be placed at the end of the `body` tag. Typically, there is no need
+Main call will be placed at the end of the `body` tag. Typically, there is no need
 to listen for `DOMContentLoaded` event.
-
-Main function should be marked as exported.
-
-```clojure
-(defn ^:export -main [])
-```
 
 #####:body
 
-Either html file or a sequence of hiccup tags to include in `body` tag.
+Either html file or a valid hiccup markup to include in `body` tag.
 
 #####:head
 
-Either html file or a sequence of hiccup tags to include in `head` tag.
+Either html file or a valid hiccup markup to include in `head` tag.
 
 #####:title
 

@@ -177,4 +177,4 @@
 (defn build
   ([main build-dir]
    (<?!evaluate (start production {:assets/main main
-                                   :assets/build-dir build-dir})
+                                   :assets/build-dir build-dir}))))

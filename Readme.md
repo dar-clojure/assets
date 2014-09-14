@@ -84,3 +84,16 @@ Either html file or a valid hiccup markup to include in `head` tag.
 #####:title
 
 Page title.
+
+##Usage
+
+Although assets builder was implemented with extensibility and ease of
+customization in mind, currently the only officially available way to use it is via
+[assets-lein](https://github.com/dar-clojure/assets-lein) plugin.
+
+##License
+
+Copyright © 2014 Eldar Gabdullin
+
+Distributed under the Eclipse Public License either version 1.0 or (at
+your option) any later version.

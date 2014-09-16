@@ -1,4 +1,8 @@
-(defproject dar/assets "0.0.1-SNAPSHOT"
+(defproject dar/assets "0.0.1"
+  :description "Web resources management framework"
+  :url "https://github.com/dar-clojure/assets"
+  :license {:name "Eclipse Public License"
+            :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/clojurescript "0.0-2322"]
                  [dar/container "0.2.0"]

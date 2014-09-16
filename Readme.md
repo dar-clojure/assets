@@ -87,9 +87,7 @@ Page title.
 
 ##Usage
 
-Although assets builder was implemented with extensibility and ease of
-customization in mind, currently the only officially available way to use it is via
-[assets-lein](https://github.com/dar-clojure/assets-lein) plugin.
+Currently, via [assets-lein](https://github.com/dar-clojure/assets-lein) plugin.
 
 ##License
 
